@@ -128,7 +128,6 @@ Packages/packages-lock.json linguist-generated
 *.jpeg                  lfs
 *.jpg                   lfs
 *.pict                  lfs
-*.png                   lfs
 *.psd                   lfs
 *.tga                   lfs
 *.tif                   lfs
