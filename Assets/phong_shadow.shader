@@ -1,0 +1,125 @@
+Shader "lit/phong_shadow"
+{
+    Properties
+    {
+        _MainTex ("Texture", 2D) = "white" {}
+        _AOMap("AO Map",2D) = "white"{}
+        _NormalMap("NormalMap",2D) = "bump"{}
+		_NormalIntensity("Normal Intensity",Range(0.0,5.0)) = 1.0
+        _SpecMask("Spec Mask",2D) = "white"{}
+        _Shininess("Shininess",Range(0.01,100)) = 1.0
+        _SpecIntensity("SpecIntensity",Range(0.01,5)) = 1.0
+        _ParallaxMap("ParallaxMap",2D) = "black"{}
+		_Parallax("_Parallax",float) = 2
+    }
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 100
+
+        Pass
+        {
+            Tags{"LightMode" = "ForwardBase"}
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fwdbase
+            #include "UnityCG.cginc"
+            #include "AutoLight.cginc"
+            
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normal : NORMAL;
+                float4 tangent : TANGENT;
+            };
+
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float3 pos_world : TEXCOORD1;
+                float3 normal_dir : TEXCOORD2;
+                float3 tangent_dir : TEXCOORD3;
+				float3 binormal_dir : TEXCOORD4;
+                SHADOW_COORDS(5)
+            };
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+
+            sampler2D _AOMap;
+            float4 _AmbientColor;
+
+			sampler2D _SpecMask;
+            float _SpecIntensity;
+            float _Shininess;
+
+            sampler2D _NormalMap;
+			float _NormalIntensity;
+            
+            sampler2D _ParallaxMap;
+			float _Parallax;
+        
+            float4 _LightColor0;
+
+            v2f vert (appdata v)
+            {
+                v2f o;
+                o.pos = UnityObjectToClipPos(v.vertex);
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.normal_dir = normalize(mul(float4(v.normal,0),unity_WorldToObject).xyz);
+                o.tangent_dir = normalize(mul(unity_ObjectToWorld, float4(v.tangent.xyz, 0.0)).xyz);
+				o.binormal_dir = normalize(cross(o.normal_dir,o.tangent_dir)) * v.tangent.w;
+                o.pos_world = mul(unity_ObjectToWorld,v.vertex).xyz;
+                TRANSFER_SHADOW(o)
+                return o;
+            }
+
+            half4 frag (v2f i) : SV_Target
+            {
+                half shadow = SHADOW_ATTENUATION(i);
+
+                //Texture
+                half4 base_color = tex2D(_MainTex, i.uv);
+                half4 ao_color = tex2D(_AOMap,i.uv);
+                half4 spec_mask = tex2D(_SpecMask, i.uv);
+                half4 normalmap = tex2D(_NormalMap,i.uv);
+                
+                //Direction
+                half3 view_dir = normalize(_WorldSpaceCameraPos.xyz - i.pos_world);
+                half3 normal_dir = normalize(i.normal_dir);
+                half3 tangent_dir = normalize(i.tangent_dir);
+				half3 binormal_dir = normalize(i.binormal_dir);
+                
+                //NORMAL
+                float3x3 TBN = float3x3(tangent_dir, binormal_dir,normal_dir);
+                half3 normal_data = UnpackNormal(normalmap);
+                normal_data.xy = normal_data.xy * _NormalIntensity;
+                normal_dir = normalize(mul(normal_data.xyz,TBN));
+                    //normal_dir = normalize(tangent_dir * normal_data.x * _NormalIntensity + binormal_dir * normal_data.y * _NormalIntensity + normal_dir * normal_data.z);
+
+                //diffuse
+                half3 light_dir = normalize(_WorldSpaceLightPos0.xyz);
+                half diff_term = min(shadow,max(0.0,dot(normal_dir, light_dir)));
+                half3 diffuse_color = diff_term * _LightColor0.xyz * base_color.rgb;
+
+                //specular
+                half3 half_dir = normalize(light_dir + view_dir);
+                half3 spec_color = pow(max(0,dot(normal_dir,half_dir)),_Shininess) 
+                 * diff_term * _SpecIntensity * spec_mask.rgb * _LightColor0.xyz;
+
+                //ambient
+                half3 ambient_color = UNITY_LIGHTMODEL_AMBIENT.rgb * base_color.xyz;
+
+                
+                half3 final_color = (diffuse_color + spec_color + ambient_color) * ao_color.rgb;
+
+                
+                return half4(final_color,1.0);
+            }
+            ENDCG
+        }
+    }Fallback "Diffuse"
+}
