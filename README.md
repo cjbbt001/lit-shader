@@ -17,43 +17,16 @@ A Unity Built-in Render Pipeline shader project implementing a custom Blinn-Phon
 
 ## Progress
 
-### 1. Base Lighting
+| Step | Preview |
+|---|---|
+| 1. Base Lighting<br>Basic diffuse, specular, and ambient lighting. | ![Base lighting](Screenshots/1_base.png) |
+| 2. Texture, AO, SpecMask<br>Main texture controls base color, AO darkens occluded areas, and SpecMask controls highlights. | ![Texture AO SpecMask](Screenshots/2_texture.png) |
+| 3. Normal Map<br>TBN converts tangent-space normal data into world space for per-pixel lighting detail. | ![Normal map](Screenshots/3_normal.png) |
+| 4. Shadow<br>ForwardBase receives shadows, and `Fallback "Diffuse"` provides shadow casting. | ![Shadow](Screenshots/4_shadow.png) |
+| 5. Parallax And Additional Lights<br>Parallax offsets UVs with a height map, while ForwardAdd accumulates extra realtime lights. | ![Parallax and additional lights](Screenshots/5_prallax_lightadd.png) |
+| 6. Final Shader<br>Texture, AO, SpecMask, normal map, parallax, shadows, and additional lights combined. | ![Final shader](Screenshots/6_final.png) |
 
-Basic Blinn-Phong lighting with diffuse, specular, and ambient terms.
-
-![Base lighting](Screenshots/1_base.png)
-
-### 2. Texture, AO, SpecMask
-
-The main texture controls base color, AO darkens occluded areas, and SpecMask controls where specular highlights appear.
-
-![Texture AO SpecMask](Screenshots/2_texture.png)
-
-### 3. Normal Map
-
-Normal mapping uses TBN to convert tangent-space normal data into world space for per-pixel lighting detail.
-
-![Normal map](Screenshots/3_normal.png)
-
-### 4. Shadow
-
-The shader receives shadows in the ForwardBase pass and uses `Fallback "Diffuse"` for shadow casting.
-
-![Shadow](Screenshots/4_shadow.png)
-
-### 5. Parallax And Additional Lights
-
-Parallax mapping offsets UVs using a height map and tangent-space view direction. ForwardAdd adds extra realtime light contribution.
-
-![Parallax and additional lights](Screenshots/5_prallax_lightadd.png)
-
-### 6. Final Shader
-
-The final material combines texture, AO, SpecMask, normal map, parallax, shadows, and additional lights.
-
-![Final shader](Screenshots/6_final.png)
-
-### 7. Scene Test
+## Scene Test
 
 The shader is also tested on a small scene asset.
 
